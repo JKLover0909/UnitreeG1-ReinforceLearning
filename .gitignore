@@ -1,0 +1,5 @@
+*.tar.gz
+IsaacGym_Preview_4_Package/
+*.so
+__pycache__/
+*.pyc
