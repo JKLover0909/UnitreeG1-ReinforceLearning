@@ -1,0 +1,32 @@
+[
+{
+  "directory": "/home/jkl/Code/UnitreeG1-ReinforceLearning/build",
+  "command": "/usr/bin/g++  -I/home/jkl/Code/UnitreeG1-ReinforceLearning/unitree_mujoco/simulate/mujoco/include -I/home/jkl/Code/UnitreeG1-ReinforceLearning/unitree_mujoco/simulate/mujoco/simulate -I/home/jkl/Code/UnitreeG1-ReinforceLearning/unitree_mujoco/simulate/src/lodepng -isystem /usr/local/include/ddscxx  -std=c++17 -g -O0 -fPIC -g -o CMakeFiles/unitree_mujoco.dir/src/joystick/joystick.cc.o -c /home/jkl/Code/UnitreeG1-ReinforceLearning/unitree_mujoco/simulate/src/joystick/joystick.cc",
+  "file": "/home/jkl/Code/UnitreeG1-ReinforceLearning/unitree_mujoco/simulate/src/joystick/joystick.cc",
+  "output": "CMakeFiles/unitree_mujoco.dir/src/joystick/joystick.cc.o"
+},
+{
+  "directory": "/home/jkl/Code/UnitreeG1-ReinforceLearning/build",
+  "command": "/usr/bin/g++  -I/home/jkl/Code/UnitreeG1-ReinforceLearning/unitree_mujoco/simulate/mujoco/include -I/home/jkl/Code/UnitreeG1-ReinforceLearning/unitree_mujoco/simulate/mujoco/simulate -I/home/jkl/Code/UnitreeG1-ReinforceLearning/unitree_mujoco/simulate/src/lodepng -isystem /usr/local/include/ddscxx  -std=c++17 -g -O0 -fPIC -g -o CMakeFiles/unitree_mujoco.dir/src/lodepng/lodepng.cpp.o -c /home/jkl/Code/UnitreeG1-ReinforceLearning/unitree_mujoco/simulate/src/lodepng/lodepng.cpp",
+  "file": "/home/jkl/Code/UnitreeG1-ReinforceLearning/unitree_mujoco/simulate/src/lodepng/lodepng.cpp",
+  "output": "CMakeFiles/unitree_mujoco.dir/src/lodepng/lodepng.cpp.o"
+},
+{
+  "directory": "/home/jkl/Code/UnitreeG1-ReinforceLearning/build",
+  "command": "/usr/bin/g++  -I/home/jkl/Code/UnitreeG1-ReinforceLearning/unitree_mujoco/simulate/mujoco/include -I/home/jkl/Code/UnitreeG1-ReinforceLearning/unitree_mujoco/simulate/mujoco/simulate -I/home/jkl/Code/UnitreeG1-ReinforceLearning/unitree_mujoco/simulate/src/lodepng -isystem /usr/local/include/ddscxx  -std=c++17 -g -O0 -fPIC -g -o CMakeFiles/unitree_mujoco.dir/src/main.cc.o -c /home/jkl/Code/UnitreeG1-ReinforceLearning/unitree_mujoco/simulate/src/main.cc",
+  "file": "/home/jkl/Code/UnitreeG1-ReinforceLearning/unitree_mujoco/simulate/src/main.cc",
+  "output": "CMakeFiles/unitree_mujoco.dir/src/main.cc.o"
+},
+{
+  "directory": "/home/jkl/Code/UnitreeG1-ReinforceLearning/build",
+  "command": "/usr/bin/g++  -I/home/jkl/Code/UnitreeG1-ReinforceLearning/unitree_mujoco/simulate/mujoco/include -I/home/jkl/Code/UnitreeG1-ReinforceLearning/unitree_mujoco/simulate/mujoco/simulate -I/home/jkl/Code/UnitreeG1-ReinforceLearning/unitree_mujoco/simulate/src/lodepng -isystem /usr/local/include/ddscxx  -std=c++17 -g -O0 -fPIC -g -o CMakeFiles/jstest.dir/src/joystick/jstest.cc.o -c /home/jkl/Code/UnitreeG1-ReinforceLearning/unitree_mujoco/simulate/src/joystick/jstest.cc",
+  "file": "/home/jkl/Code/UnitreeG1-ReinforceLearning/unitree_mujoco/simulate/src/joystick/jstest.cc",
+  "output": "CMakeFiles/jstest.dir/src/joystick/jstest.cc.o"
+},
+{
+  "directory": "/home/jkl/Code/UnitreeG1-ReinforceLearning/build",
+  "command": "/usr/bin/g++  -I/home/jkl/Code/UnitreeG1-ReinforceLearning/unitree_mujoco/simulate/mujoco/include -I/home/jkl/Code/UnitreeG1-ReinforceLearning/unitree_mujoco/simulate/mujoco/simulate -I/home/jkl/Code/UnitreeG1-ReinforceLearning/unitree_mujoco/simulate/src/lodepng -isystem /usr/local/include/ddscxx  -std=c++17 -g -O0 -fPIC -g -o CMakeFiles/jstest.dir/src/joystick/joystick.cc.o -c /home/jkl/Code/UnitreeG1-ReinforceLearning/unitree_mujoco/simulate/src/joystick/joystick.cc",
+  "file": "/home/jkl/Code/UnitreeG1-ReinforceLearning/unitree_mujoco/simulate/src/joystick/joystick.cc",
+  "output": "CMakeFiles/jstest.dir/src/joystick/joystick.cc.o"
+}
+]

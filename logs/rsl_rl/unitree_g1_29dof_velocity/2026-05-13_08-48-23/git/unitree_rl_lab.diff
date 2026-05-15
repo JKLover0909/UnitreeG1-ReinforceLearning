@@ -1,0 +1,77 @@
+--- git commit ---
+4960b84732b0c2ec593dccbfe963fda1bcd7b1e3
+
+
+--- git status ---
+On branch main
+Your branch is up to date with 'origin/main'.
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   scripts/rsl_rl/train.py
+	modified:   source/unitree_rl_lab/unitree_rl_lab/assets/robots/unitree.py
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	unitree_model/
+	unitree_ros/
+
+no changes added to commit (use "git add" and/or "git commit -a") 
+
+
+--- git diff ---
+diff --git a/scripts/rsl_rl/train.py b/scripts/rsl_rl/train.py
+index 28dae91..5dbc04f 100644
+--- a/scripts/rsl_rl/train.py
++++ b/scripts/rsl_rl/train.py
+@@ -104,7 +104,7 @@ from isaaclab.envs import (
+ )
+ from isaaclab.utils.dict import print_dict
+ from isaaclab.utils.io import dump_yaml
+-from isaaclab_rl.rsl_rl import RslRlOnPolicyRunnerCfg, RslRlVecEnvWrapper
++from isaaclab_rl.rsl_rl import RslRlOnPolicyRunnerCfg, RslRlVecEnvWrapper, handle_deprecated_rsl_rl_cfg
+ from isaaclab_tasks.utils import get_checkpoint_path
+ from isaaclab_tasks.utils.hydra import hydra_task_config
+ 
+@@ -122,6 +122,7 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
+     """Train with RSL-RL agent."""
+     # override configurations with non-hydra CLI arguments
+     agent_cfg = cli_args.update_rsl_rl_cfg(agent_cfg, args_cli)
++    agent_cfg = handle_deprecated_rsl_rl_cfg(agent_cfg, installed_version)
+     env_cfg.scene.num_envs = args_cli.num_envs if args_cli.num_envs is not None else env_cfg.scene.num_envs
+     agent_cfg.max_iterations = (
+         args_cli.max_iterations if args_cli.max_iterations is not None else agent_cfg.max_iterations
+diff --git a/source/unitree_rl_lab/unitree_rl_lab/assets/robots/unitree.py b/source/unitree_rl_lab/unitree_rl_lab/assets/robots/unitree.py
+index e78413a..38f7de6 100644
+--- a/source/unitree_rl_lab/unitree_rl_lab/assets/robots/unitree.py
++++ b/source/unitree_rl_lab/unitree_rl_lab/assets/robots/unitree.py
+@@ -17,8 +17,8 @@ from isaaclab.utils import configclass
+ 
+ from unitree_rl_lab.assets.robots import unitree_actuators
+ 
+-UNITREE_MODEL_DIR = "path/to/unitree_model"  # Replace with the actual path to your unitree_model directory
+-UNITREE_ROS_DIR = "path/to/unitree_ros"  # Replace with the actual path to your unitree_ros package
++UNITREE_MODEL_DIR = "/home/jkl/Code/UnitreeG1-ReinforceLearning/unitree_rl_lab/unitree_model"  # Replace with the actual path to your unitree_model directory
++UNITREE_ROS_DIR = "/home/jkl/Code/UnitreeG1-ReinforceLearning/unitree_rl_lab/unitree_ros"
+ 
+ 
+ @configclass
+@@ -395,12 +395,12 @@ UNITREE_G1_23DOF_CFG = UnitreeArticulationCfg(
+ )
+ 
+ UNITREE_G1_29DOF_CFG = UnitreeArticulationCfg(
+-    # spawn=UnitreeUrdfFileCfg(
+-    #     asset_path=f"{UNITREE_ROS_DIR}/robots/g1_description/g1_29dof_rev_1_0.urdf",
+-    # ),
+-    spawn=UnitreeUsdFileCfg(
+-        usd_path=f"{UNITREE_MODEL_DIR}/G1/29dof/usd/g1_29dof_rev_1_0/g1_29dof_rev_1_0.usd",
++    spawn=UnitreeUrdfFileCfg(
++        asset_path=f"{UNITREE_ROS_DIR}/robots/g1_description/g1_29dof_rev_1_0.urdf",
+     ),
++    # spawn=UnitreeUsdFileCfg(
++    #     usd_path=f"{UNITREE_MODEL_DIR}/G1/29dof/usd/g1_29dof_rev_1_0/g1_29dof_rev_1_0.usd",
++    # ),
+     init_state=ArticulationCfg.InitialStateCfg(
+         pos=(0.0, 0.0, 0.8),
+         joint_pos={
