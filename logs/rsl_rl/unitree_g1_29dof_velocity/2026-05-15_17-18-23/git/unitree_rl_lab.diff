@@ -1,0 +1,287 @@
+--- git commit ---
+4960b84732b0c2ec593dccbfe963fda1bcd7b1e3
+
+
+--- git status ---
+On branch main
+Your branch is up to date with 'origin/main'.
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   scripts/rsl_rl/play.py
+	modified:   scripts/rsl_rl/train.py
+	modified:   source/unitree_rl_lab/unitree_rl_lab/assets/robots/unitree.py
+	modified:   source/unitree_rl_lab/unitree_rl_lab/tasks/mimic/robots/g1_29dof/gangnanm_style/tracking_env_cfg.py
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	unitree_model/
+	unitree_ros/
+
+no changes added to commit (use "git add" and/or "git commit -a") 
+
+
+--- git diff ---
+diff --git a/scripts/rsl_rl/play.py b/scripts/rsl_rl/play.py
+index fd5ff85..03ca38c 100644
+--- a/scripts/rsl_rl/play.py
++++ b/scripts/rsl_rl/play.py
+@@ -8,7 +8,7 @@
+ """Launch Isaac Sim Simulator first."""
+ 
+ import argparse
+-from importlib.metadata import version
++import importlib.metadata as metadata
+ 
+ from isaaclab.app import AppLauncher
+ 
+@@ -50,19 +50,29 @@ import os
+ import time
+ import torch
+ 
++from packaging import version
++
+ from rsl_rl.runners import OnPolicyRunner
+ 
+ import isaaclab_tasks  # noqa: F401
+ from isaaclab.envs import DirectMARLEnv, multi_agent_to_single_agent
+ from isaaclab.utils.assets import retrieve_file_path
+ from isaaclab.utils.dict import print_dict
+-from isaaclab.utils.pretrained_checkpoint import get_published_pretrained_checkpoint
+-from isaaclab_rl.rsl_rl import RslRlOnPolicyRunnerCfg, RslRlVecEnvWrapper, export_policy_as_jit, export_policy_as_onnx
++from isaaclab_rl.utils.pretrained_checkpoint import get_published_pretrained_checkpoint
++from isaaclab_rl.rsl_rl import (
++    RslRlOnPolicyRunnerCfg,
++    RslRlVecEnvWrapper,
++    export_policy_as_jit,
++    export_policy_as_onnx,
++    handle_deprecated_rsl_rl_cfg,
++)
+ from isaaclab_tasks.utils import get_checkpoint_path
+ 
+ import unitree_rl_lab.tasks  # noqa: F401
+ from unitree_rl_lab.utils.parser_cfg import parse_env_cfg
+ 
++installed_version = metadata.version("rsl-rl-lib")
++
+ 
+ def main():
+     """Play with RSL-RL agent."""
+@@ -75,6 +85,7 @@ def main():
+         entry_point_key="play_env_cfg_entry_point",
+     )
+     agent_cfg: RslRlOnPolicyRunnerCfg = cli_args.parse_rsl_rl_cfg(args_cli.task, args_cli)
++    agent_cfg = handle_deprecated_rsl_rl_cfg(agent_cfg, installed_version)
+ 
+     # specify directory for logging experiments
+     log_root_path = os.path.join("logs", "rsl_rl", agent_cfg.experiment_name)
+@@ -129,34 +140,40 @@ def main():
+     # obtain the trained policy for inference
+     policy = runner.get_inference_policy(device=env.unwrapped.device)
+ 
+-    # extract the neural network module
+-    # we do this in a try-except to maintain backwards compatibility.
+-    try:
+-        # version 2.3 onwards
+-        policy_nn = runner.alg.policy
+-    except AttributeError:
+-        # version 2.2 and below
+-        policy_nn = runner.alg.actor_critic
+-
+-    # extract the normalizer
+-    if hasattr(policy_nn, "actor_obs_normalizer"):
+-        normalizer = policy_nn.actor_obs_normalizer
+-    elif hasattr(policy_nn, "student_obs_normalizer"):
+-        normalizer = policy_nn.student_obs_normalizer
+-    else:
+-        normalizer = None
++    export_model_dir = os.path.join(os.path.dirname(resume_path), "exported")
+ 
+     # export policy to onnx/jit
+-    export_model_dir = os.path.join(os.path.dirname(resume_path), "exported")
+-    export_policy_as_jit(policy_nn, normalizer=normalizer, path=export_model_dir, filename="policy.pt")
+-    export_policy_as_onnx(policy_nn, normalizer=normalizer, path=export_model_dir, filename="policy.onnx")
++    if version.parse(installed_version) >= version.parse("4.0.0"):
++        runner.export_policy_to_jit(path=export_model_dir, filename="policy.pt")
++        runner.export_policy_to_onnx(path=export_model_dir, filename="policy.onnx")
++        policy_nn = None
++    else:
++        # extract the neural network module
++        # we do this in a try-except to maintain backwards compatibility.
++        try:
++            # version 2.3 onwards
++            policy_nn = runner.alg.policy
++        except AttributeError:
++            # version 2.2 and below
++            policy_nn = runner.alg.actor_critic
++
++        # extract the normalizer
++        if hasattr(policy_nn, "actor_obs_normalizer"):
++            normalizer = policy_nn.actor_obs_normalizer
++        elif hasattr(policy_nn, "student_obs_normalizer"):
++            normalizer = policy_nn.student_obs_normalizer
++        else:
++            normalizer = None
++
++        export_policy_as_jit(policy_nn, normalizer=normalizer, path=export_model_dir, filename="policy.pt")
++        export_policy_as_onnx(policy_nn, normalizer=normalizer, path=export_model_dir, filename="policy.onnx")
+ 
+     dt = env.unwrapped.step_dt
+ 
+     # reset environment
+     obs = env.get_observations()
+-    if version("rsl-rl-lib").startswith("2.3."):
+-        obs, _ = env.get_observations()
++    if isinstance(obs, tuple):
++        obs = obs[0]
+     timestep = 0
+     # simulate environment
+     while simulation_app.is_running():
+@@ -166,7 +183,11 @@ def main():
+             # agent stepping
+             actions = policy(obs)
+             # env stepping
+-            obs, _, _, _ = env.step(actions)
++            obs, _, dones, _ = env.step(actions)
++            if version.parse(installed_version) >= version.parse("4.0.0"):
++                policy.reset(dones)
++            elif policy_nn is not None:
++                policy_nn.reset(dones)
+         if args_cli.video:
+             timestep += 1
+             # Exit the play loop after recording one video
+diff --git a/scripts/rsl_rl/train.py b/scripts/rsl_rl/train.py
+index 28dae91..5c2cd9d 100644
+--- a/scripts/rsl_rl/train.py
++++ b/scripts/rsl_rl/train.py
+@@ -92,7 +92,7 @@ import shutil
+ import torch
+ from datetime import datetime
+ 
+-from rsl_rl.runners import OnPolicyRunner  # TODO: Consider printing the experiment name in the terminal.
++from rsl_rl.runners import DistillationRunner, OnPolicyRunner  # TODO: Consider printing the experiment name in the terminal.
+ 
+ import isaaclab_tasks  # noqa: F401
+ from isaaclab.envs import (
+@@ -104,7 +104,7 @@ from isaaclab.envs import (
+ )
+ from isaaclab.utils.dict import print_dict
+ from isaaclab.utils.io import dump_yaml
+-from isaaclab_rl.rsl_rl import RslRlOnPolicyRunnerCfg, RslRlVecEnvWrapper
++from isaaclab_rl.rsl_rl import RslRlOnPolicyRunnerCfg, RslRlVecEnvWrapper, handle_deprecated_rsl_rl_cfg
+ from isaaclab_tasks.utils import get_checkpoint_path
+ from isaaclab_tasks.utils.hydra import hydra_task_config
+ 
+@@ -122,6 +122,7 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
+     """Train with RSL-RL agent."""
+     # override configurations with non-hydra CLI arguments
+     agent_cfg = cli_args.update_rsl_rl_cfg(agent_cfg, args_cli)
++    agent_cfg = handle_deprecated_rsl_rl_cfg(agent_cfg, installed_version)
+     env_cfg.scene.num_envs = args_cli.num_envs if args_cli.num_envs is not None else env_cfg.scene.num_envs
+     agent_cfg.max_iterations = (
+         args_cli.max_iterations if args_cli.max_iterations is not None else agent_cfg.max_iterations
+@@ -132,6 +133,13 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
+     env_cfg.seed = agent_cfg.seed
+     env_cfg.sim.device = args_cli.device if args_cli.device is not None else env_cfg.sim.device
+ 
++    # check for invalid combination of CPU device with distributed training
++    if args_cli.distributed and args_cli.device is not None and "cpu" in args_cli.device:
++        raise ValueError(
++            "Distributed training is not supported when using CPU device. "
++            "Please use GPU device (e.g., --device cuda) for distributed training."
++        )
++
+     # multi-gpu training configuration
+     if args_cli.distributed:
+         env_cfg.sim.device = f"cuda:{app_launcher.local_rank}"
+@@ -154,6 +162,9 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
+         log_dir += f"_{agent_cfg.run_name}"
+     log_dir = os.path.join(log_root_path, log_dir)
+ 
++    # set the log directory for the environment (works for all environment types)
++    env_cfg.log_dir = log_dir
++
+     # create isaac environment
+     env = gym.make(args_cli.task, cfg=env_cfg, render_mode="rgb_array" if args_cli.video else None)
+ 
+@@ -161,8 +172,13 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
+     if isinstance(env.unwrapped, DirectMARLEnv):
+         env = multi_agent_to_single_agent(env)
+ 
++    runner_class_name = getattr(agent_cfg, "class_name", "OnPolicyRunner")
++    is_distillation = runner_class_name == "DistillationRunner" or (
++        hasattr(agent_cfg, "algorithm") and getattr(agent_cfg.algorithm, "class_name", None) == "Distillation"
++    )
++
+     # save resume path before creating a new log_dir
+-    if agent_cfg.resume or agent_cfg.algorithm.class_name == "Distillation":
++    if agent_cfg.resume or is_distillation:
+         resume_path = get_checkpoint_path(log_root_path, agent_cfg.load_run, agent_cfg.load_checkpoint)
+ 
+     # wrap for video recording
+@@ -181,11 +197,16 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
+     env = RslRlVecEnvWrapper(env, clip_actions=agent_cfg.clip_actions)
+ 
+     # create runner from rsl-rl
+-    runner = OnPolicyRunner(env, agent_cfg.to_dict(), log_dir=log_dir, device=agent_cfg.device)
++    if runner_class_name == "OnPolicyRunner":
++        runner = OnPolicyRunner(env, agent_cfg.to_dict(), log_dir=log_dir, device=agent_cfg.device)
++    elif runner_class_name == "DistillationRunner":
++        runner = DistillationRunner(env, agent_cfg.to_dict(), log_dir=log_dir, device=agent_cfg.device)
++    else:
++        raise ValueError(f"Unsupported runner class: {runner_class_name}")
+     # write git state to logs
+     runner.add_git_repo_to_log(__file__)
+     # load the checkpoint
+-    if agent_cfg.resume or agent_cfg.algorithm.class_name == "Distillation":
++    if agent_cfg.resume or is_distillation:
+         print(f"[INFO]: Loading model checkpoint from: {resume_path}")
+         # load previously trained model
+         runner.load(resume_path)
+diff --git a/source/unitree_rl_lab/unitree_rl_lab/assets/robots/unitree.py b/source/unitree_rl_lab/unitree_rl_lab/assets/robots/unitree.py
+index e78413a..38f7de6 100644
+--- a/source/unitree_rl_lab/unitree_rl_lab/assets/robots/unitree.py
++++ b/source/unitree_rl_lab/unitree_rl_lab/assets/robots/unitree.py
+@@ -17,8 +17,8 @@ from isaaclab.utils import configclass
+ 
+ from unitree_rl_lab.assets.robots import unitree_actuators
+ 
+-UNITREE_MODEL_DIR = "path/to/unitree_model"  # Replace with the actual path to your unitree_model directory
+-UNITREE_ROS_DIR = "path/to/unitree_ros"  # Replace with the actual path to your unitree_ros package
++UNITREE_MODEL_DIR = "/home/jkl/Code/UnitreeG1-ReinforceLearning/unitree_rl_lab/unitree_model"  # Replace with the actual path to your unitree_model directory
++UNITREE_ROS_DIR = "/home/jkl/Code/UnitreeG1-ReinforceLearning/unitree_rl_lab/unitree_ros"
+ 
+ 
+ @configclass
+@@ -395,12 +395,12 @@ UNITREE_G1_23DOF_CFG = UnitreeArticulationCfg(
+ )
+ 
+ UNITREE_G1_29DOF_CFG = UnitreeArticulationCfg(
+-    # spawn=UnitreeUrdfFileCfg(
+-    #     asset_path=f"{UNITREE_ROS_DIR}/robots/g1_description/g1_29dof_rev_1_0.urdf",
+-    # ),
+-    spawn=UnitreeUsdFileCfg(
+-        usd_path=f"{UNITREE_MODEL_DIR}/G1/29dof/usd/g1_29dof_rev_1_0/g1_29dof_rev_1_0.usd",
++    spawn=UnitreeUrdfFileCfg(
++        asset_path=f"{UNITREE_ROS_DIR}/robots/g1_description/g1_29dof_rev_1_0.urdf",
+     ),
++    # spawn=UnitreeUsdFileCfg(
++    #     usd_path=f"{UNITREE_MODEL_DIR}/G1/29dof/usd/g1_29dof_rev_1_0/g1_29dof_rev_1_0.usd",
++    # ),
+     init_state=ArticulationCfg.InitialStateCfg(
+         pos=(0.0, 0.0, 0.8),
+         joint_pos={
+diff --git a/source/unitree_rl_lab/unitree_rl_lab/tasks/mimic/robots/g1_29dof/gangnanm_style/tracking_env_cfg.py b/source/unitree_rl_lab/unitree_rl_lab/tasks/mimic/robots/g1_29dof/gangnanm_style/tracking_env_cfg.py
+index 8dec2a5..22090c7 100644
+--- a/source/unitree_rl_lab/unitree_rl_lab/tasks/mimic/robots/g1_29dof/gangnanm_style/tracking_env_cfg.py
++++ b/source/unitree_rl_lab/unitree_rl_lab/tasks/mimic/robots/g1_29dof/gangnanm_style/tracking_env_cfg.py
+@@ -23,7 +23,7 @@ from isaaclab.utils.noise import AdditiveUniformNoiseCfg as Unoise
+ 
+ import unitree_rl_lab.tasks.mimic.mdp as mdp
+ from unitree_rl_lab.assets.robots.unitree import UNITREE_G1_29DOF_MIMIC_ACTION_SCALE
+-from unitree_rl_lab.assets.robots.unitree import UNITREE_G1_29DOF_MIMIC_CFG as ROBOT_CFG
++from unitree_rl_lab.assets.robots.unitree import UNITREE_G1_29DOF_CFG as ROBOT_CFG
+ 
+ ##
+ # Scene definition

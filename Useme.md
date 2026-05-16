@@ -14,6 +14,10 @@ python scripts/rsl_rl/train.py --headless --task Unitree-G1-29dof-Velocity
  ###same as
 python scripts/rsl_rl/play.py --task Unitree-G1-29dof-Velocity
 
+cd /home/jkl/Code/UnitreeG1-ReinforceLearning/unitree_rl_lab
+conda activate unitree_rl
+python scripts/rsl_rl/play.py --task Unitree-G1-29dof-Velocity --checkpoint /home/jkl/Code/UnitreeG1-ReinforceLearning/unitree_rl_lab/logs/rsl_rl/unitree_g1_29dof_velocity/2026-05-11_18-13-06/model_5200.pt --headless
+
 # MUJOCO
 
 ## Sim2Sim
@@ -87,3 +91,10 @@ Press [R1 + X] = giữ RB + nhấn nút X
 Với output jstest của bạn:
 BtnTL/BtnTR chính là LB/RB
 LT/RT sẽ làm đổi giá trị axis (thường là trục 2 và 5), không hiện như button on/off
+
+
+/home/jkl/miniconda3/envs/unitree_rl/bin/python unitree_rl_lab/scripts/rsl_rl/train_arm_hold.py \
+  --task Unitree-G1-29dof-Velocity-ArmHold \
+  --num_envs 1 \
+  --max_iterations 0 \
+  --headless
