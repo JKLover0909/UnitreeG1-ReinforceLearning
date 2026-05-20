@@ -3,3 +3,8 @@ IsaacGym_Preview_4_Package/
 *.so
 __pycache__/
 *.pyc
+*.pt
+outputs/
+logs/
+checkpoints/
+results/
