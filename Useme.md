@@ -65,7 +65,7 @@ Wrapper này đăng ký env `ArmHold` ở runtime rồi chuyển tiếp các tha
 Xây dựng và chạy mô phỏng dựa trên MuJoCo (unitree_mujoco):
 
 ```bash
-cd unitree_mujoco/simulate
+cd unitree_mujoco/simulate/build
 rm -rf build && mkdir build && cd build
 cmake ..
 make -j4
@@ -75,7 +75,7 @@ LD_LIBRARY_PATH=/usr/local/lib ./unitree_mujoco -r g1 -s scene.xml
 Chạy chương trình điều khiển gốc (`g1_ctrl`):
 
 ```bash
-cd unitree_rl_lab/deploy/robots/g1_29dof
+cd unitree_rl_lab/deploy/robots/g1_29dof/build
 rm -rf build && mkdir build && cd build
 cmake ..
 make -j$(nproc)
@@ -111,9 +111,24 @@ python scripts/rsl_rl/train_arm_hold.py \
 ```bash
 python scripts/rsl_rl/play_arm_hold.py \
   --task Unitree-G1-29dof-Velocity-ArmHold \
-  --num_envs 16 \
-  --load_run 2026-05-16_16-24-21 \
-  --checkpoint model_6000.pt
+  --num_envs 8 \
+  --load_run 2026-05-18_08-38-41 \
+  --checkpoint model_18700.pt
+```
+
+- Ví dụ chạy velocity bình thường:
+
+```bash
+cd /home/jkl/Code/UnitreeG1-ReinforceLearning/unitree_rl_lab
+
+python scripts/rsl_rl/play.py \
+  --task Unitree-G1-29dof-Velocity \
+  --num_envs 1 \
+  --load_run 2026-05-11_18-13-06 \
+  --checkpoint model_5200.pt \
+  --stand_still \
+  --print_joint_state \
+  --print_joint_interval 50
 ```
 
 ## Khắc phục sự cố (Troubleshooting)
